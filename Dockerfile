@@ -5,7 +5,12 @@ RUN apt install -y openjdk-8-jre python less curl openssh-server openssh-client
 ENV JAVA_HOME /usr/lib/jvm/java-8-openjdk-amd64
 
 # Setup Hadoop
-RUN curl -s http://apache.mirrors.ionfish.org/hadoop/common/hadoop-2.9.2/hadoop-2.9.2.tar.gz | tar -xz -C /root
+# For slow network connection, download the files, copy and extract them
+# Comment and uncomment accordingly
+RUN curl -s https://archive.apache.org/dist/hadoop/core/hadoop-2.9.2/hadoop-2.9.2.tar.gz | tar -xz -C /root
+#COPY hadoop/hadoop-2.9.2.tar.gz /root/hadoop-2.9.2.tar.gz
+#RUN tar -xzf /root/hadoop-2.9.2.tar.gz -C /root
+#RUN rm /root/hadoop-2.9.2.tar.gz
 RUN mkdir /root/hadoop-2.9.2/dfs
 COPY hadoop/hadoop-env.sh /root/hadoop-2.9.2/etc/hadoop/hadoop-env.sh
 COPY hadoop/core-site.xml /root/hadoop-2.9.2/etc/hadoop/core-site.xml
@@ -25,9 +30,20 @@ RUN /root/hadoop-2.9.2/bin/hdfs namenode -format
 
 
 # Setup Hive
-RUN curl -s http://apache.mirrors.ionfish.org/hive/hive-2.3.6/apache-hive-2.3.6-bin.tar.gz | tar -xz -C /root
+# For slow network connection, download the files, copy and extract them
+# Comment and uncomment accordingly
+
+RUN curl -s https://archive.apache.org/dist/hive/hive-2.3.6/apache-hive-2.3.6-src.tar.gz | tar -xz -C /root
+#COPY hive/apache-hive-2.3.6-bin.tar.gz /root/apache-hive-2.3.6-bin.tar.gz
+#RUN tar -xzf /root/apache-hive-2.3.6-bin.tar.gz -C /root
+#RUN rm /root/apache-hive-2.3.6-bin.tar.gz
 COPY hive/hive-site.xml /root/apache-hive-2.3.6-bin/conf/hive-site.xml
 RUN curl -s https://jdbc.postgresql.org/download/postgresql-42.2.6.jar -o /root/apache-hive-2.3.6-bin/lib/postgresql-42.2.6.jar
+#COPY postgresql/postgresql-42.2.6.jar /root/apache-hive-2.3.6-bin/lib/postgresql-42.2.6.jar
+
+#Following JAR files are required for serialization/deserialization
+COPY hive/parquet-hive-1.2.5.jar /root/apache-hive-2.3.6-bin/lib/parquet-hive-1.2.5.jar
+COPY hive/hive-serde-1.2.2.jar /root/apache-hive-2.3.6-bin/lib/jive-serde-1.2.2.jar
 
 ## Setup Postgres
 RUN DEBIAN_FRONTEND=noninteractive apt install -y postgresql postgresql-contrib
@@ -36,8 +52,14 @@ RUN su postgres -c '/usr/lib/postgresql/10/bin/initdb -D /var/lib/postgresql/10/
 
 # Setup Presto
 ENV PRESTO_HOME /root/presto-server-318
+# For slow network connection, download the files, copy and extract them
+# Comment and uncomment accordingly
 RUN curl -s https://repo1.maven.org/maven2/io/prestosql/presto-server/318/presto-server-318.tar.gz | tar -xz -C /root
+#COPY presto/presto-server-318.tar.gz /root/presto-server-318.tar.gz
+#RUN tar -xzf /root/presto-server-318.tar.gz -C /root 
+#RUN rm /root/presto-server-318.tar.gz
 RUN curl -s https://repo1.maven.org/maven2/io/prestosql/presto-cli/318/presto-cli-318-executable.jar -o $PRESTO_HOME/bin/presto-cli 
+#COPY presto/presto-cli-318-executable.jar $PRESTO_HOME/bin/presto-cli
 RUN chmod +x $PRESTO_HOME/bin/presto-cli
 RUN ln -s $PRESTO_HOME/bin/presto-cli /usr/local/bin/presto-cli
 RUN chmod +x /usr/local/bin/presto-cli
@@ -57,3 +79,4 @@ RUN chmod 700 /root/start_services.sh
 CMD ["/root/start_services.sh"]
 
 EXPOSE 8080
+EXPOSE 9083

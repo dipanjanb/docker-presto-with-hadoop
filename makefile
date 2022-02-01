@@ -1,2 +1,2 @@
 docker:
-	docker build -t presto-with-hadoop .
+	docker build -t presto-hive-hadoop .
